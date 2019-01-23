@@ -35,7 +35,7 @@ def main():
         ssid = _check_current__ssid()
         if "off" not in ssid:
             _find_wifi_pass(ssid)
-            print("Password for " + ssid + " is after psk above")
+            print("Password for %s  is after psk above" % ssid)
         else:
             print("Not connected to wifi")
     else:

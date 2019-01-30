@@ -1,12 +1,17 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import sys
-import os
 import subprocess
 import re
-
+import argparse
+import logging
 
 # Still working on my naming (Dont judge me) );
+
+
 def sanitize_string(dirty_string):
-    return dirty_string.replace(r'\n', '').strip()
+    return dirty_string.replace(r'\n', '').strip().replace(r'"', '')
 
 
 def parse_ssid_string(ssid_str):
@@ -30,22 +35,37 @@ def check_current__ssid():
 
 def find_wifi_password(ssid):
     try:
-        os.system("sudo cat /etc/NetworkManager/system-connections/" +
-                  ssid + " | grep psk=")
-    except IOError:
+        ssid_data = subprocess.run(
+            ["sudo", "cat", f"/etc/NetworkManager/system-connections/{ssid}"], capture_output=True)
+    except (IOError, FileExistsError):
         raise Exception("Error reading file")
+
+    re_password = re.compile(r"(?<=psk=)[0-9a-zA-Z]*")
+    password = re_password.findall(str(ssid_data))
+    return password[0]
 
 
 def main():
-    if sys.platform.startswith("linux"):
-        ssid = check_current__ssid()
-        if "off" not in ssid:
-            find_wifi_password(ssid)
-            print("Password for %s  is text after psk= " % ssid)
+    logging.basicConfig(format='%(levelname)s:%(message)s',
+                        level=logging.DEBUG)
+    parser = argparse.ArgumentParser(
+        prog="Wifi Checker",
+        description="Check wifi password of your internet connection without leaving the terminal", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument(
+        'current', help="Specify to check password of current wifi connection")
+    args = parser.parse_args()
+
+    if args.current:
+        if sys.platform.startswith("linux"):
+            ssid = check_current__ssid()
+            if "off" not in ssid:
+                ssid_password = find_wifi_password(ssid)
+                logging.info("Password for %s is %s" % (ssid, ssid_password))
+            else:
+                logging.info("Not connected to wifi")
         else:
-            print("Not connected to wifi")
-    else:
-        print("Script support only linux systems")
+            logging.info("Script support only linux systems")
 
 
 if __name__ == "__main__":

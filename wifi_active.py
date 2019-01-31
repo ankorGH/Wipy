@@ -40,21 +40,25 @@ def find_wifi_password(ssid):
     except (IOError, FileExistsError):
         raise Exception("Error reading file")
 
-    re_password = re.compile(r"(?<=psk=)[0-9a-zA-Z]*")
+    re_password = re.compile(r"(?<=psk=)[\w\d@!#$%^&*()]*")
     password = re_password.findall(str(ssid_data))
-    return password[0]
+    return ''.join(password)
 
 
-def main():
-    logging.basicConfig(format='%(levelname)s:%(message)s',
-                        level=logging.DEBUG)
+def parse_args():
     parser = argparse.ArgumentParser(
         prog="Wifi Checker",
         description="Check wifi password of your internet connection without leaving the terminal", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     parser.add_argument(
         'current', help="Specify to check password of current wifi connection")
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+    logging.basicConfig(format='%(message)s',
+                        level=logging.DEBUG)
+    args = parse_args()
 
     if args.current:
         if sys.platform.startswith("linux"):
